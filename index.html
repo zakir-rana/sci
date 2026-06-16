@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RxPharma — Management System</title>
+</head>
+<body>
+
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">Rx<span style="color:var(--text2)">Pharma</span></div>
+    <div class="login-sub">Pharmaceutical Management System</div>
+
+    <div style="margin-bottom:16px;">
+      <label>Quick Login (Select Role)</label>
+      <div class="login-roles" id="quickRoles"></div>
+    </div>
+
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="loginUser" placeholder="Enter username" />
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="Enter password" value="1234" />
+    </div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">Sign In →</button>
+    <p style="text-align:center;font-size:12px;color:var(--text3);margin-top:16px;">Default password: 1234 | Demo system</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation menu" title="Menu">☰</button>
+    <span class="topbar-logo">Rx<span style="color:var(--text2)">Pharma</span></span>
+    <div class="topbar-sep"></div>
+    <div class="topbar-nav" id="topNav"></div>
+    <div class="topbar-right">
+      <div class="user-chip" onclick="profileClick()">
+        <div class="avatar" id="topAvatar"></div>
+        <div class="user-info">
+          <div class="user-name" id="topUserName"></div>
+          <div class="user-role" id="topUserRole"></div>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub">Overview & KPIs</div>
+        </div>
+        <div id="dash-date" style="font-size:13px;color:var(--text3);font-family:'JetBrains Mono',monospace;"></div>
+      </div>
+      <div class="stats-grid" id="dashStats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:4px;" id="dashBottom"></div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div class="page" id="page-products">
+      <div class="page-header">
+        <div><div class="page-title">Products</div><div class="page-sub">Manage pharmaceutical products</div></div>
+        <button class="btn btn-primary" onclick="openProductModal()">+ Add Product</button>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap" style="flex:1;max-width:300px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search products..." oninput="renderProducts()" id="productSearch" />
+        </div>
+        <select onchange="renderProducts()" id="productCatFilter" style="width:150px;">
+          <option value="">All Categories</option>
+          <option>Tablet</option><option>Capsule</option><option>Syrup</option><option>Injection</option><option>Cream</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>#</th><th>Product Name</th><th>Category</th><th>Unit</th><th>TP</th><th>SP</th><th>Stock</th><th>Actions</th></tr></thead>
+        <tbody id="productsBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- PARTIES -->
+    <div class="page" id="page-parties">
+      <div class="page-header">
+        <div><div class="page-title">Parties</div><div class="page-sub">Pharmacies, Doctors, Chemists & Distributors</div></div>
+        <button class="btn btn-primary" onclick="openPartyModal()">+ Add Party</button>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap" style="flex:1;max-width:300px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search parties..." oninput="renderParties()" id="partySearch" />
+        </div>
+        <select onchange="renderParties()" id="partyTypeFilter" style="width:160px;">
+          <option value="">All Types</option>
+          <option>Pharmacy</option><option>Doctor</option><option>Chemist</option>
+          <option>Distributor</option><option>Hospital</option><option>Clinic</option><option>Institution</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>#</th><th>Name</th><th>Type</th><th>Territory / Area</th><th>Phone</th><th>Outstanding (৳)</th><th>Actions</th></tr></thead>
+        <tbody id="partiesBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- INVOICES -->
+    <div class="page" id="page-invoices">
+      <div class="page-header">
+        <div><div class="page-title">Invoices</div><div class="page-sub">Sales invoices & billing</div></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <!-- /// UPDATED SECTION — Pending approval badge -->
+          <div id="approvalQueueBtn" onclick="showPage('approvals')" style="display:none;cursor:pointer;padding:7px 14px;border-radius:8px;background:rgba(161,79,255,0.15);border:1px solid #a14fff;color:#a14fff;font-size:13px;font-weight:600;">⏳ Approvals <span id="pendingApprovalCount" class="nav-badge">0</span></div>
+          <button class="btn btn-primary" onclick="openInvoiceModal()">+ New Invoice</button>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap" style="flex:1;max-width:260px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search invoices..." oninput="renderInvoices()" id="invoiceSearch" />
+        </div>
+        <select onchange="renderInvoices()" id="invoiceStatusFilter" style="width:160px;">
+          <option value="">All Status</option>
+          <option>Paid</option><option>Due</option><option>Partial</option>
+          <option>Draft</option><option>Pending AM</option><option>Pending RSM</option>
+          <option>Pending ASM</option><option>Approved</option><option>Rejected</option><option>Invoiced</option>
+        </select>
+        <select onchange="renderInvoices()" id="invoicePayTypeFilter" style="width:130px;">
+          <option value="">All Types</option>
+          <option>Cash</option><option>Credit</option><option>Partial</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Invoice#</th><th>Date</th><th>Party</th><th>Pay Type</th><th>Items</th><th>Total</th><th>Paid</th><th>Due</th><th>Approval</th><th>Actions</th></tr></thead>
+        <tbody id="invoicesBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- /// UPDATED SECTION — APPROVAL QUEUE PAGE -->
+    <div class="page" id="page-approvals">
+      <div class="page-header">
+        <div><div class="page-title">Approval Queue</div><div class="page-sub">Credit & Partial invoice approvals</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="renderApprovalQueue()">🔄 Refresh</button>
+      </div>
+      <div class="stats-grid" id="approvalStats"></div>
+      <div class="table-wrap" style="margin-top:16px;">
+        <table>
+          <thead><tr><th>Invoice#</th><th>Date</th><th>Party</th><th>Pay Type</th><th>Total</th><th>Submitted By</th><th>Approval Status</th><th>Actions</th></tr></thead>
+          <tbody id="approvalQueueBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SALES REPORT -->
+    <div class="page" id="page-sales">
+      <div class="page-header">
+        <div><div class="page-title">Sales Report</div><div class="page-sub">Filtered sales data by date & territory</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="exportSalesReport()">⬇ Export</button>
+      </div>
+      <!-- Date Filter Bar -->
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="setSalesFilter('today', this)">Today</button>
+        <button class="filter-btn" onclick="setSalesFilter('month', this)">This Month</button>
+        <button class="filter-btn" onclick="setSalesFilter('custom', this)">Custom Range</button>
+        <div class="filter-sep"></div>
+        <div class="filter-dates" id="customDateRange" style="display:none;">
+          <label>From:</label>
+          <input type="date" id="salesFrom" />
+          <label>To:</label>
+          <input type="date" id="salesTo" />
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="renderSalesReport()">Apply</button>
+        <select id="salesUserFilter" style="width:160px;padding:8px 12px;font-size:13px;" onchange="renderSalesReport()">
+          <option value="">All Users</option>
+        </select>
+      </div>
+
+      <!-- Summary Stats -->
+      <div class="stats-grid" id="salesStats"></div>
+
+      <!-- Sales Table -->
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Invoice#</th><th>Party</th><th>Product(s)</th><th>Qty</th><th>Amount</th><th>Due</th><th>Status</th><th id="gpHeader" style="display:none;">Gross Profit</th></tr></thead>
+          <tbody id="salesBody"></tbody>
+          <tfoot id="salesFoot" style="font-weight:700;background:var(--surface2);"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- OUTSTANDING -->
+    <div class="page" id="page-outstanding">
+      <div class="page-header">
+        <div><div class="page-title">Outstanding (Due)</div><div class="page-sub">Party-wise due amounts</div></div>
+        <div id="outstandingTotal" style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--danger);"></div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap" style="flex:1;max-width:300px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search party..." oninput="renderOutstanding()" id="outSearch" />
+        </div>
+        <select id="outAreaFilter" style="width:160px;" onchange="renderOutstanding()">
+          <option value="">All Areas</option>
+        </select>
+        <button class="btn btn-danger btn-sm" onclick="renderOutstanding()">Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Party Name</th><th>Type</th><th>Area</th><th>MIO</th><th>Total Sales (৳)</th><th>Paid (৳)</th><th>Outstanding (৳)</th></tr></thead>
+          <tbody id="outstandingBody"></tbody>
+          <tfoot id="outstandingFoot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- TARGETS -->
+    <div class="page" id="page-targets">
+      <div class="page-header">
+        <div><div class="page-title">Targets</div><div class="page-sub">Monthly sales targets & achievement</div></div>
+        <button class="btn btn-primary" id="addTargetBtn" onclick="openTargetModal()" style="display:none;">+ Set Target</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>User</th><th>Role</th><th>Territory</th><th>Code</th><th>Month</th><th>Target (৳)</th><th>Achieved (৳)</th><th>Achievement</th><th id="targetEditHead">Actions</th></tr></thead>
+        <tbody id="targetsBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="page-users">
+      <div class="page-header">
+        <div><div class="page-title">User Management</div><div class="page-sub">Add & manage team members</div></div>
+        <button class="btn btn-primary" onclick="openUserModal()">+ Add User</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>#</th><th>Name</th><th>Role</th><th>Territory / Code</th><th>Reporting To</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="usersBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <div><div class="page-title">Settings</div><div class="page-sub">System configuration — CEO Access Only</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div class="card">
+          <div class="settings-section">
+            <h3>Company Info</h3>
+            <div class="form-group"><label>Company Name</label><input type="text" id="companyName" value="RxPharma Bangladesh Ltd." /></div>
+            <div class="form-group"><label>Address</label><input type="text" id="companyAddr" value="Dhaka, Bangladesh" /></div>
+            <div class="form-group"><label>Phone</label><input type="text" id="companyPhone" value="+880 1700-000000" /></div>
+            <button class="btn btn-primary btn-sm" onclick="saveCompanySettings()">Save Settings</button>
+          </div>
+        </div>
+
+        <!-- /// UPDATED SECTION — Company Logo Upload -->
+        <div class="card">
+          <div class="settings-section">
+            <h3>Company Logo</h3>
+            <div id="logoPreviewArea" style="margin-bottom:16px;min-height:60px;display:flex;align-items:center;justify-content:center;">
+              <img id="logoPreviewImg" class="logo-preview" style="display:none;" />
+              <span id="logoPlaceholder" style="color:var(--text3);font-size:13px;">No logo uploaded</span>
+            </div>
+            <div class="logo-upload-area" onclick="document.getElementById('logoFileInput').click()">
+              <div style="font-size:28px;margin-bottom:8px;">🖼</div>
+              <div style="font-size:13px;color:var(--text2);font-weight:600;">Click to upload logo</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:4px;">PNG, JPG — max 2MB</div>
+            </div>
+            <input type="file" id="logoFileInput" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)" />
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <button class="btn btn-primary btn-sm" onclick="saveCompanyLogo()">Save Logo</button>
+              <button class="btn btn-danger btn-sm" onclick="removeLogo()">Remove Logo</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="settings-section">
+            <h3>System Hierarchy</h3>
+            <div class="hier-tree">
+              <div class="hier-branch">
+                <div class="hier-box badge-ceo" style="border-color:var(--accent);">CEO</div>
+                <div class="hier-line"></div>
+                <div class="hier-children">
+                  <div class="hier-branch">
+                    <div class="hier-box badge-asm" style="border-color:#a14fff;">ASM</div>
+                    <div class="hier-line"></div>
+                    <div class="hier-children">
+                      <div class="hier-branch">
+                        <div class="hier-box badge-rsm" style="border-color:var(--warning);">RSM</div>
+                        <div class="hier-line"></div>
+                        <div class="hier-children">
+                          <div class="hier-branch">
+                            <div class="hier-box badge-am" style="border-color:var(--success);">AM</div>
+                            <div class="hier-line"></div>
+                            <div class="hier-box badge-mio" style="border-color:var(--danger);">MIO</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- /// UPDATED SECTION — Per-User Permission Manager -->
+        <div class="card" style="grid-column:1/-1;">
+          <div class="settings-section">
+            <h3>User Module Permission Manager</h3>
+            <p style="font-size:13px;color:var(--text3);margin-bottom:16px;">Enable or disable module access per user. Changes apply immediately after save.</p>
+            <div style="margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <select id="permUserSelect" style="width:220px;" onchange="loadUserPermissions()">
+                <option value="">— Select User —</option>
+              </select>
+              <select id="permModuleFilter" style="width:160px;" onchange="loadUserPermissions()">
+                <option value="">All Modules</option>
+              </select>
+            </div>
+            <div id="permissionEditor"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="settings-section">
+            <h3>Product Units</h3>
+            <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">Active product units in system</p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              <span class="badge badge-paid">Strip</span>
+              <span class="badge badge-rsm">Box</span>
+              <span class="badge badge-am">Vial</span>
+              <span class="badge badge-asm">Sachet</span>
+              <span class="badge badge-mio">Bottle</span>
+              <span class="badge badge-ceo">Piece</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="settings-section">
+            <h3>Permissions Matrix (Default Roles)</h3>
+            <table style="font-size:12px;width:100%;">
+              <thead><tr><th>Feature</th><th>CEO</th><th>ASM</th><th>RSM</th><th>AM</th><th>MIO</th></tr></thead>
+              <tbody>
+                <tr><td>Settings</td><td>FULL</td><td>NONE</td><td>NONE</td><td>NONE</td><td>NONE</td></tr>
+                <tr><td>Products</td><td>FULL</td><td>VIEW</td><td>VIEW</td><td>VIEW</td><td>VIEW</td></tr>
+                <tr><td>Invoices</td><td>FULL</td><td>EDIT</td><td>EDIT</td><td>CREATE</td><td>CREATE</td></tr>
+                <tr><td>Reports</td><td>FULL</td><td>VIEW</td><td>VIEW</td><td>VIEW</td><td>VIEW</td></tr>
+                <tr><td>Users</td><td>FULL</td><td>EDIT</td><td>NONE</td><td>NONE</td><td>NONE</td></tr>
+                <tr><td>DCR</td><td>FULL</td><td>VIEW</td><td>VIEW</td><td>VIEW</td><td>CREATE</td></tr>
+                <tr><td>Expense</td><td>FULL</td><td>EDIT</td><td>EDIT</td><td>VIEW</td><td>CREATE</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- /// UPDATED SECTION — GEOGRAPHY HIERARCHY MODULE (Division > Region > Area > Territory) -->
+    <div class="page" id="page-territory">
+      <div class="page-header">
+        <div><div class="page-title">Geography Hierarchy</div><div class="page-sub">Division → Region → Area → Territory master management</div></div>
+        <div style="display:flex;gap:8px;" id="geoAddBtns">
+          <button class="btn btn-primary btn-sm" id="geoAddBtn" onclick="openGeoModal()">+ Add</button>
+        </div>
+      </div>
+      <!-- Tabs -->
+      <div class="geo-tabs">
+        <button class="geo-tab active" id="geoTab-division" onclick="switchGeoTab('division')">🏢 Divisions</button>
+        <button class="geo-tab" id="geoTab-region" onclick="switchGeoTab('region')">🗺 Regions</button>
+        <button class="geo-tab" id="geoTab-area" onclick="switchGeoTab('area')">📍 Areas</button>
+        <button class="geo-tab" id="geoTab-territory" onclick="switchGeoTab('territory')">📌 Territories</button>
+      </div>
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <div class="search-wrap" style="flex:1;max-width:300px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search..." oninput="renderGeoList()" id="geoSearch" />
+        </div>
+        <select id="geoParentFilter" style="width:200px;" onchange="renderGeoList()">
+          <option value="">All</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead id="geoTableHead"></thead>
+          <tbody id="geoTableBody"></tbody>
+        </table>
+      </div>
+      <!-- Hierarchy tree summary -->
+      <div class="card" style="margin-top:20px;">
+        <div class="settings-section" style="margin-bottom:0;">
+          <h3>Hierarchy Summary</h3>
+          <div id="geoHierarchySummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:16px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- /// UPDATED SECTION — DCR MODULE -->
+    <div class="page" id="page-dcr">
+      <div class="page-header">
+        <div><div class="page-title">Daily Call Report (DCR)</div><div class="page-sub">Field visit logs & activity tracking</div></div>
+        <button class="btn btn-primary" id="addDCRBtn" onclick="openDCRModal()" style="display:none;">+ New DCR</button>
+      </div>
+      <div class="stats-grid" id="dcrStats"></div>
+      <div class="filter-bar">
+        <div class="search-wrap" style="flex:1;max-width:260px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search DCR..." oninput="renderDCR()" id="dcrSearch" />
+        </div>
+        <select id="dcrStatusFilter" style="width:130px;" onchange="renderDCR()">
+          <option value="">All Status</option>
+          <option>Visited</option><option>No Meeting</option><option>Postponed</option>
+        </select>
+        <select id="dcrUserFilter" style="width:160px;" onchange="renderDCR()">
+          <option value="">All MIOs</option>
+        </select>
+        <input type="date" id="dcrDateFilter" style="width:160px;" onchange="renderDCR()" />
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>MIO</th><th>Doctor Visited</th><th>Chemist Visited</th><th>Status</th><th>Order</th><th>Follow-up</th><th>Notes</th><th>Actions</th></tr></thead>
+          <tbody id="dcrBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- /// UPDATED SECTION — EXPENSE MODULE -->
+    <div class="page" id="page-expense">
+      <div class="page-header">
+        <div><div class="page-title">Expense Management</div><div class="page-sub">Submit, review & approve field expenses</div></div>
+        <button class="btn btn-primary" id="addExpenseBtn" onclick="openExpenseModal()" style="display:none;">+ Submit Expense</button>
+      </div>
+      <div class="stats-grid" id="expenseStats"></div>
+      <div class="filter-bar">
+        <div class="search-wrap" style="flex:1;max-width:260px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search expense..." oninput="renderExpenses()" id="expenseSearch" />
+        </div>
+        <select id="expenseTypeFilter" style="width:140px;" onchange="renderExpenses()">
+          <option value="">All Types</option>
+          <option>Travel</option><option>DA</option><option>Hotel</option><option>Food</option><option>Fuel</option><option>Mobile</option><option>Others</option>
+        </select>
+        <select id="expenseStatusFilter" style="width:130px;" onchange="renderExpenses()">
+          <option value="">All Status</option>
+          <option>Pending</option><option>Approved</option><option>Rejected</option>
+        </select>
+        <input type="month" id="expenseMonthFilter" style="width:160px;" onchange="renderExpenses()" />
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Submitted By</th><th>Type</th><th>Amount (৳)</th><th>Notes</th><th>Status</th><th>Approved By</th><th>Actions</th></tr></thead>
+          <tbody id="expenseBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- /// UPDATED SECTION — Territory modal replaced by geoModal above -->
+
+<!-- /// UPDATED SECTION — DCR MODAL -->
+<div class="modal-overlay" id="dcrModal">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-header">
+      <span class="modal-title" id="dcrModalTitle">New Daily Call Report</span>
+      <button class="modal-close" onclick="closeModal('dcrModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="dcrId" />
+      <div class="grid-2">
+        <div class="form-group"><label>Date*</label><input type="date" id="dcrDate" /></div>
+        <div class="form-group"><label>Visit Status*</label>
+          <select id="dcrStatus">
+            <option>Visited</option><option>No Meeting</option><option>Postponed</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Doctor Visited</label><input type="text" id="dcrDoctor" placeholder="Dr. Name or clinic" /></div>
+        <div class="form-group"><label>Chemist Visited</label><input type="text" id="dcrChemist" placeholder="Pharmacy/Chemist name" /></div>
+        <div class="form-group"><label>Order Generated (৳)</label><input type="number" id="dcrOrder" placeholder="0.00" step="0.01" /></div>
+        <div class="form-group"><label>Next Follow-up Date</label><input type="date" id="dcrFollowup" /></div>
+        <div class="form-group" style="grid-column:1/-1;"><label>Notes</label><textarea id="dcrNotes" rows="3" placeholder="Visit notes, observations, issues..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('dcrModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDCR()">Submit DCR</button>
+    </div>
+  </div>
+</div>
+
+<!-- /// UPDATED SECTION — EXPENSE MODAL -->
+<div class="modal-overlay" id="expenseModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <span class="modal-title" id="expenseModalTitle">Submit Expense</span>
+      <button class="modal-close" onclick="closeModal('expenseModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="expenseId" />
+      <div class="grid-2">
+        <div class="form-group"><label>Date*</label><input type="date" id="expDate" /></div>
+        <div class="form-group"><label>Expense Type*</label>
+          <select id="expType">
+            <option>Travel</option><option>DA</option><option>Hotel</option><option>Food</option><option>Fuel</option><option>Mobile</option><option>Others</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Amount (৳)*</label><input type="number" id="expAmount" placeholder="0.00" step="0.01" /></div>
+        <div class="form-group" style="grid-column:1/-1;"><label>Notes / Description</label><textarea id="expNotes" rows="2" placeholder="Purpose, route, etc."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('expenseModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveExpense()">Submit Expense</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<!-- Product Modal -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <span class="modal-title" id="productModalTitle">Add Product</span>
+      <button class="modal-close" onclick="closeModal('productModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="productId" />
+      <div class="grid-2">
+        <div class="form-group"><label>Product Name*</label><input type="text" id="pName" placeholder="e.g. Napa 500mg" /></div>
+        <div class="form-group"><label>Category*</label>
+          <select id="pCategory"><option>Tablet</option><option>Capsule</option><option>Syrup</option><option>Injection</option><option>Cream</option><option>Drop</option></select>
+        </div>
+        <div class="form-group"><label>Unit*</label>
+          <select id="pUnit"><option>Strip</option><option>Box</option><option>Vial</option><option>Sachet</option><option>Bottle</option><option>Piece</option></select>
+        </div>
+        <div class="form-group"><label>Stock Quantity</label><input type="number" id="pStock" placeholder="0" /></div>
+        <div class="form-group"><label>Trade Price (TP) ৳</label><input type="number" id="pTP" placeholder="0.00" step="0.01" /></div>
+        <div class="form-group"><label>Sale Price (SP) ৳</label><input type="number" id="pSP" placeholder="0.00" step="0.01" /></div>
+      </div>
+      <div class="form-group"><label>Description</label><textarea id="pDesc" rows="2" placeholder="Optional description..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('productModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- Party Modal -->
+<div class="modal-overlay" id="partyModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <span class="modal-title" id="partyModalTitle">Add Party</span>
+      <button class="modal-close" onclick="closeModal('partyModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="partyId" />
+      <div class="grid-2">
+        <div class="form-group" style="grid-column:1/-1;"><label>Party Name*</label><input type="text" id="ptName" placeholder="Dr. John / Green Pharmacy" /></div>
+        <div class="form-group"><label>Type*</label>
+          <!-- UPDATED SECTION — Extended party types for BD pharma -->
+          <select id="ptType">
+            <option>Pharmacy</option><option>Doctor</option><option>Chemist</option>
+            <option>Distributor</option><option>Hospital</option><option>Clinic</option><option>Institution</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Territory Code</label>
+          <select id="ptTerritoryCode">
+            <option value="">Select Territory</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Area/Location</label>
+          <input type="text" id="ptArea" placeholder="e.g. Mirpur-10" />
+        </div>
+        <div class="form-group"><label>Phone</label><input type="text" id="ptPhone" placeholder="+880..." /></div>
+        <div class="form-group"><label>Assigned MIO</label>
+          <select id="ptMIO"><option value="">Unassigned</option></select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1;"><label>Address</label><textarea id="ptAddr" rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('partyModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveParty()">Save Party</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice Modal -->
+<div class="modal-overlay" id="invoiceModal">
+  <div class="modal" style="max-width:800px;">
+    <div class="modal-header">
+      <span class="modal-title">New Invoice</span>
+      <button class="modal-close" onclick="closeModal('invoiceModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="form-group"><label>Party*</label>
+          <select id="invParty" onchange="onInvPartyChange()"></select>
+        </div>
+        <div class="form-group"><label>Date*</label><input type="date" id="invDate" /></div>
+        <!-- /// UPDATED SECTION — Payment Type drives approval workflow -->
+        <div class="form-group"><label>Payment Type*</label>
+          <select id="invPayType" onchange="onInvPayTypeChange()">
+            <option value="Cash">Cash (Auto-approved)</option>
+            <option value="Credit">Credit (Needs approval)</option>
+            <option value="Partial">Partial (Needs approval)</option>
+          </select>
+        </div>
+        <div class="form-group" id="invPaidGroup"><label>Paid Amount (৳)</label><input type="number" id="invPaid" placeholder="0.00" step="0.01" oninput="calcInvoice()" /></div>
+      </div>
+      <!-- /// UPDATED SECTION — Approval notice banner -->
+      <div id="invApprovalNotice" style="display:none;padding:10px 14px;border-radius:8px;background:rgba(161,79,255,0.1);border:1px solid #a14fff;color:#a14fff;font-size:13px;margin-bottom:14px;">
+        ⚠️ <strong>Credit/Partial</strong> invoices require approval chain: MIO → AM → RSM → ASM before stock deduction & final invoice.
+      </div>
+      <div style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <label>Invoice Items</label>
+          <button class="btn btn-ghost btn-sm" onclick="addInvoiceItem()">+ Add Item</button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:6px;padding:0 2px;">
+          <span>Product</span><span>Unit</span><span>Qty</span><span>TP (৳)</span><span>SP (৳)</span><span>Disc%</span><span>Net (৳)</span><span></span>
+        </div>
+        <div id="invoiceItems"></div>
+        <div class="inv-total-row">
+          <div><span class="inv-total-label">Subtotal: </span><span class="inv-total-val taka" id="invSubtotal">৳ 0.00</span></div>
+          <div><span class="inv-total-label">Total: </span><span class="inv-total-val taka" id="invTotalDisp">৳ 0.00</span></div>
+          <div><span class="inv-total-label">Due: </span><span class="inv-total-val taka" style="color:var(--danger);" id="invDueDisp">৳ 0.00</span></div>
+        </div>
+      </div>
+      <div class="form-group"><label>Notes</label><textarea id="invNotes" rows="2" placeholder="Optional..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('invoiceModal')">Cancel</button>
+      <button class="btn btn-primary" id="invSubmitBtn" onclick="saveInvoice()">Create Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- /// UPDATED SECTION — Approval Action Modal -->
+<div class="modal-overlay" id="approvalModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <span class="modal-title" id="approvalModalTitle">Approve Invoice</span>
+      <button class="modal-close" onclick="closeModal('approvalModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="approvalInvoiceId" />
+      <input type="hidden" id="approvalAction" />
+      <div id="approvalInvoiceInfo" style="background:var(--surface2);border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px;"></div>
+      <div class="form-group"><label>Remarks / Reason</label>
+        <textarea id="approvalRemarks" rows="3" placeholder="Enter approval remarks or rejection reason..."></textarea>
+      </div>
+      <!-- Approval History -->
+      <div style="margin-top:12px;">
+        <label>Approval History</label>
+        <ul class="ap-history" id="approvalHistoryList" style="margin-top:8px;"></ul>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('approvalModal')">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="approvalRejectBtn" onclick="submitApprovalAction('reject')">✗ Reject</button>
+      <button class="btn btn-success" id="approvalApproveBtn" onclick="submitApprovalAction('approve')">✓ Approve</button>
+    </div>
+  </div>
+</div>
+
+<!-- /// UPDATED SECTION — Geography (Division/Region/Area/Territory) CRUD Modal -->
+<div class="modal-overlay" id="geoModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <span class="modal-title" id="geoModalTitle">Add Division</span>
+      <button class="modal-close" onclick="closeModal('geoModal')">×</button>
+    </div>
+    <div class="modal-body" id="geoModalBody">
+      <!-- Dynamically filled by JS -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('geoModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveGeoRecord()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- User Modal -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <span class="modal-title" id="userModalTitle">Add User</span>
+      <button class="modal-close" onclick="closeModal('userModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="userId" />
+      <div class="grid-2">
+        <div class="form-group"><label>Full Name*</label><input type="text" id="uName" /></div>
+        <div class="form-group"><label>Username*</label><input type="text" id="uUsername" /></div>
+        <div class="form-group"><label>Role*</label>
+          <select id="uRole" onchange="updateUserRoleOptions()">
+            <option value="ASM">ASM</option><option value="RSM">RSM</option>
+            <option value="AM">AM</option><option value="MIO">MIO</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Reports To</label>
+          <select id="uReportsTo"><option value="">Select Manager</option></select>
+        </div>
+        <!-- UPDATED SECTION — Territory Code select for BD pharma territory -->
+        <div class="form-group"><label>Territory Code</label>
+          <select id="uTerritoryCode">
+            <option value="">Select Code</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Territory Name</label><input type="text" id="uTerritory" placeholder="e.g. Mirpur-10" /></div>
+        <div class="form-group"><label>Phone</label><input type="text" id="uPhone" /></div>
+        <div class="form-group"><label>Password</label><input type="password" id="uPass" value="1234" /></div>
+        <div class="form-group"><label>Status</label>
+          <select id="uStatus"><option>Active</option><option>Inactive</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('userModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveUser()">Save User</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice View Modal -->
+<div class="modal-overlay" id="viewInvoiceModal">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <span class="modal-title">Invoice Details</span>
+      <button class="modal-close" onclick="closeModal('viewInvoiceModal')">×</button>
+    </div>
+    <div class="modal-body" id="invoiceViewBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('viewInvoiceModal')">Close</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨 Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- Target Modal -->
+<div class="modal-overlay" id="targetModal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <span class="modal-title">Set Target</span>
+      <button class="modal-close" onclick="closeModal('targetModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="targetId" />
+      <div class="form-group"><label>User</label>
+        <select id="tUser"></select>
+      </div>
+      <div class="form-group"><label>Month</label>
+        <input type="month" id="tMonth" />
+      </div>
+      <div class="form-group"><label>Target Amount (৳)</label>
+        <input type="number" id="tAmount" placeholder="0.00" step="0.01" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('targetModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTarget()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
